@@ -1,3 +1,4 @@
+
 /* kmeans_1d_omp.c
    K-means 1D (C99) com paralelização OpenMP.
    - Paraleliza os laços principais das funções de assignment e update.
@@ -76,16 +77,26 @@ static void write_centroids_csv(const char *path, const double *C, int K){
 
 
 /* ---------- k-means 1D - VERSÃO PARALELA COM OPENMP ---------- */
+
 /* Etapa de atribuição (assignment) paralelizada */
 static double assignment_step_1d_omp(const double *X, const double *C, int *assign, int N, int K){
     double sse = 0.0;
-    
+
     // O laço principal sobre os pontos (N) é paralelizado.
     // A variável sse é somada usando a cláusula 'reduction' para evitar condição de corrida.
+    // Versão implícita (não indica explicitamente que distribuição de blocos é estática)
     #pragma omp parallel for reduction(+:sse)
+    // Versão estática (indicada explicitamente)
+    //#pragma omp parallel for reduction(+:sse) schedule(static)
+    // Versão estática com chunk size de 1000. O sistema distribui blocos de 1000 iterações.
+    //#pragma omp parallel for reduction(+:sse) schedule(static, 1000)
+    // Versão dinâmica com chunk de 1000. Threads pegam um bloco de 1000, e quando terminam, pedem outro.
+    //#pragma omp parallel for reduction(+:sse) schedule(dynamic, 1000)
+
     for(int i=0; i<N; i++){
         int best = -1;
         double bestd = 1e300;
+        // O laço interno sobre os centróides (K) é pequeno e executado por cada thread.
         for(int c=0; c<K; c++){
             double diff = X[i] - C[c];
             double d = diff * diff;
@@ -97,21 +108,29 @@ static double assignment_step_1d_omp(const double *X, const double *C, int *assi
     return sse;
 }
 
-/* Etapa de atualização (update) paralelizada - acumuladores locais */
+/* Etapa de atualização (update) paralelizada - Opção A (acumuladores locais) */
 static void update_step_1d_omp(const double *X, double *C, const int *assign, int N, int K){
     int num_threads = omp_get_max_threads();
-    
+
     // Aloca acumuladores por thread: uma matriz para somas e uma para contagens.
     double *sum_threads = (double*)calloc((size_t)K * num_threads, sizeof(double));
     int *cnt_threads = (int*)calloc((size_t)K * num_threads, sizeof(int));
     if(!sum_threads || !cnt_threads){ fprintf(stderr,"Sem memoria no update\n"); exit(1); }
 
     // O laço principal sobre os pontos (N) é paralelizado.
+    // Versão implícita (não indica explicitamente que distribuição de blocos é estática)
     #pragma omp parallel for
+    // Versão estática (indicada explicitamente)
+    //#pragma omp parallel for schedule(static)
+    // Versão estática com chunk size de 1000. O sistema distribui blocos de 1000 iterações.
+    //#pragma omp parallel for schedule(static, 1000)
+    // Versão dinâmica com chunk de 1000. Threads pegam um bloco de 1000, e quando terminam, pedem outro.
+    //#pragma omp parallel for schedule(dynamic, 1000)
+
     for(int i=0; i<N; i++){
         int th_id = omp_get_thread_num();
         int a = assign[i];
-        
+
         // Cada thread atualiza sua própria linha na matriz de acumuladores.
         // O índice é calculado para evitar que threads diferentes escrevam no mesmo lugar.
         cnt_threads[th_id * K + a] += 1;
@@ -146,6 +165,14 @@ static void kmeans_1d_omp(const double *X, double *C, int *assign,
     int it;
     for(it=0; it<max_iter; it++){
         sse = assignment_step_1d_omp(X, C, assign, N, K);
+
+        // =================== VALIDAÇÃO DO SSE ===================
+        if (it > 0 && sse > prev_sse) {
+            // Imprime um aviso se o SSE aumentar. Isso indica um erro na lógica paralela!
+            printf("AVISO na iteração %d: SSE aumentou! (Atual: %.6f > Anterior: %.6f)\n", it, sse, prev_sse);
+        }
+        // ==========================================================
+
         double rel = fabs(sse - prev_sse) / (prev_sse > 0.0 ? prev_sse : 1.0);
         if(rel < eps){ it++; break; }
         update_step_1d_omp(X, C, assign, N, K);
