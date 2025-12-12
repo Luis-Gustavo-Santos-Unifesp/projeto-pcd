@@ -1,0 +1,57 @@
+Compilando...
+Compilação OK!
+
+>>> Executando com NP = 1 <<<
+Rank 0: Lido N=10000 pontos, K=4 centroides
+--------------------------------------------------
+MPI Resultados (P=1):
+Iterações: 37
+SSE Final: 515659.823940
+Tempo Total (max): 0.0021 s
+Tempo Comunicação (Allreduce): 0.0000 s
+Fraçao Comunicação: 0.62%
+--------------------------------------------------
+
+>>> Executando com NP = 2 <<<
+Rank 0: Lido N=10000 pontos, K=4 centroides
+--------------------------------------------------
+MPI Resultados (P=2):
+Iterações: 37
+SSE Final: 515659.823940
+Tempo Total (max): 0.0021 s
+Tempo Comunicação (Allreduce): 0.0002 s
+Fraçao Comunicação: 11.16%
+--------------------------------------------------
+
+>>> Executando com NP = 4 <<<
+Rank 0: Lido N=10000 pontos, K=4 centroides
+--------------------------------------------------
+MPI Resultados (P=4):
+Iterações: 37
+SSE Final: 515659.823940
+Tempo Total (max): 0.0062 s
+Tempo Comunicação (Allreduce): 0.0053 s
+Fraçao Comunicação: 86.10%
+--------------------------------------------------
+
+>>> Executando com NP = 8 <<<
+Rank 0: Lido N=10000 pontos, K=4 centroides
+--------------------------------------------------
+MPI Resultados (P=8):
+Iterações: 37
+SSE Final: 515659.823940
+Tempo Total (max): 0.0094 s
+Tempo Comunicação (Allreduce): 0.0089 s
+Fraçao Comunicação: 94.02%
+--------------------------------------------------
+
+>>> Executando com NP = 16 <<<
+Rank 0: Lido N=10000 pontos, K=4 centroides
+--------------------------------------------------
+MPI Resultados (P=16):
+Iterações: 37
+SSE Final: 515659.823940
+Tempo Total (max): 0.0947 s
+Tempo Comunicação (Allreduce): 0.0945 s
+Fraçao Comunicação: 99.73%
+--------------------------------------------------
